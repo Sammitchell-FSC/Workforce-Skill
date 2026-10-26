@@ -9,7 +9,7 @@ competencies required for their role, and reports skill gaps.
 2. Run `02_sample_data.sql` (loads 24 SYNTHETIC test respondents; replace with real survey data later).
 3. Run `03_queries.sql` to reproduce the query set (Q1 is the live-demo query).
 
-Command line: `mysql -u root -p < sql/01_schema.sql` then the same for 02 and 03.
+Command line: `mysql -u root -p < 01_schema.sql` then the same for 02 and 03.
 
 ## Team
 Sam, Oscar, Luigi, Raelle (see commit history for individual contributions).
