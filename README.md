@@ -15,5 +15,5 @@ Command line: `mysql -u root -p < 01_schema.sql` then the same for 02 and 03.
 https://forms.gle/h8UGNf1iNW8p2CWv7
 
 ## Team
-Sam Mitchell, Oscar, Luigi Scolieri, Raelle Pierre-Francois  (see commit history for individual contributions).
+Sam Mitchell, Oscar Hernandez, Luigi Scolieri, Raelle Pierre-Francois  (see commit history for individual contributions).
 
