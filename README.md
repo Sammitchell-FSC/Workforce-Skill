@@ -12,5 +12,5 @@ competencies required for their role, and reports skill gaps.
 Command line: `mysql -u root -p < 01_schema.sql` then the same for 02 and 03.
 
 ## Team
-Sam Mitchell, Oscar, Luigi, Raelle Pierre-Francois  (see commit history for individual contributions).
+Sam Mitchell, Oscar, Luigi Scolieri, Raelle Pierre-Francois  (see commit history for individual contributions).
 
