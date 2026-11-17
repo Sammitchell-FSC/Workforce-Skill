@@ -1,38 +1,41 @@
--- 03_queries.sql : finalized query set for the Revised Proposal. Run after 01 and 02.
+-- 03_queries.sql (v2): finalized query set. Run after 01 and 02.
 USE workforce_skills;
 
--- Q1 (LIVE DEMO): skill-gap profile for one respondent (multi-table join through view)
-SELECT respondent_code, role_title, skill_name, required_level, current_level, gap_points
+-- Q1 (LIVE DEMO): full skill profile for one respondent (multi-table join through a view)
+SELECT respondent_code, role_title, skill_name, importance_level, proficiency_level, gap_points
 FROM v_skill_gap
-WHERE respondent_code = 'R007' AND gap_points > 0
+WHERE respondent_code = 'R004'
 ORDER BY gap_points DESC, skill_name;
 
--- Q2: most common AI-related skill gaps across all respondents (aggregation)
-SELECT skill_name,
-       COUNT(*)                   AS respondents_required,
-       SUM(gap_points > 0)        AS respondents_with_gap,
-       ROUND(AVG(gap_points), 2)  AS avg_gap_points
-FROM v_skill_gap
-WHERE is_ai_related = 1
-GROUP BY skill_id, skill_name
-ORDER BY respondents_with_gap DESC, avg_gap_points DESC;
+-- Q2: for each skill, how many need it, how many fall short, and how many want to learn it
+SELECT v.skill_name,
+       SUM(v.importance_level >= 2) AS respondents_needing_skill,
+       SUM(v.gap_points > 0)        AS respondents_with_gap,
+       ROUND(AVG(v.proficiency_level), 2) AS avg_proficiency,
+       (SELECT COUNT(*) FROM Employee_Learning_Interests li
+         WHERE li.skill_id = v.skill_id) AS respondents_wanting_to_learn
+FROM v_skill_gap v
+GROUP BY v.skill_id, v.skill_name
+ORDER BY respondents_wanting_to_learn DESC;
 
--- Q3: department-level average gap, ONLY departments with at least 3 respondents
+-- Q3: department-level results, ONLY departments with at least 3 respondents
 SELECT department_name,
-       COUNT(DISTINCT employee_id) AS respondents,
-       ROUND(AVG(gap_points), 2)   AS avg_gap_points
+       COUNT(DISTINCT employee_id)       AS respondents,
+       ROUND(AVG(proficiency_level), 2)  AS avg_proficiency,
+       ROUND(AVG(importance_level), 2)   AS avg_importance,
+       ROUND(AVG(gap_points), 2)         AS avg_gap_points
 FROM v_skill_gap
-WHERE is_ai_related = 1
 GROUP BY department_id, department_name
 HAVING COUNT(DISTINCT employee_id) >= 3
 ORDER BY avg_gap_points DESC;
 
--- Q4: the same measure rolled up to reporting groups, so no respondent is dropped
+-- Q4: the same measures by reporting group, so no respondent is dropped
 SELECT reporting_group,
-       COUNT(DISTINCT employee_id) AS respondents,
-       ROUND(AVG(gap_points), 2)   AS avg_gap_points
+       COUNT(DISTINCT employee_id)       AS respondents,
+       ROUND(AVG(proficiency_level), 2)  AS avg_proficiency,
+       ROUND(AVG(importance_level), 2)   AS avg_importance,
+       ROUND(AVG(gap_points), 2)         AS avg_gap_points
 FROM v_skill_gap
-WHERE is_ai_related = 1
 GROUP BY reporting_group
 ORDER BY avg_gap_points DESC;
 
@@ -44,24 +47,22 @@ GROUP BY d.department_id, d.department_name, d.reporting_group
 HAVING COUNT(e.employee_id) < 3
 ORDER BY respondents;
 
--- Q6 (subquery): respondents with no AI-related skill rated 4 or higher
-SELECT e.respondent_code, jr.role_title
+-- Q6 (subquery): respondents who want to learn a skill they rate "Not needed" for their current job
+SELECT e.respondent_code, s.skill_name
 FROM Employees e
-JOIN Job_Roles jr ON jr.role_id = e.role_id
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM Employee_Skills es
-    JOIN Skills s ON s.skill_id = es.skill_id
-    WHERE es.employee_id = e.employee_id
-      AND s.is_ai_related = 1
-      AND es.proficiency_level >= 4
-);
+JOIN Employee_Skills es ON es.employee_id = e.employee_id
+JOIN Skills s ON s.skill_id = es.skill_id
+WHERE es.importance_level = 1
+  AND EXISTS (SELECT 1 FROM Employee_Learning_Interests li
+               WHERE li.employee_id = e.employee_id AND li.skill_id = es.skill_id)
+ORDER BY e.respondent_code, s.skill_name;
 
--- Q7 (subquery): do respondents holding a certification show smaller AI skill gaps?
-SELECT CASE WHEN employee_id IN (SELECT employee_id FROM Employee_Certifications)
-            THEN 'Has certification' ELSE 'No certification' END AS cert_status,
-       COUNT(DISTINCT employee_id) AS respondents,
-       ROUND(AVG(gap_points), 2)   AS avg_gap_points
-FROM v_skill_gap
-WHERE is_ai_related = 1
-GROUP BY cert_status;
+-- Q7: does AI tool use frequency go with AI tool proficiency? (aggregation on a respondent attribute)
+SELECT e.ai_use_frequency,
+       COUNT(*) AS respondents,
+       ROUND(AVG(es.proficiency_level), 2) AS avg_ai_tool_proficiency
+FROM Employees e
+JOIN Employee_Skills es ON es.employee_id = e.employee_id
+JOIN Skills s ON s.skill_id = es.skill_id AND s.skill_name = 'AI tools'
+GROUP BY e.ai_use_frequency
+ORDER BY FIELD(e.ai_use_frequency, 'Never', 'Sometimes', 'Often');
