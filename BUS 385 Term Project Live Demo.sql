@@ -1,3 +1,22 @@
+-- Workforce Skills Database: Live Demo for BUS 385 Term Project Presentation
+-- Purpose: Insert a simulated employee and analyze skill gaps
+--
+-- Requirements:
+-- Run the database setup script before this demo
+--
+-- Instructions:
+-- Step 1: Insert the simulated employee
+-- Step 2: Insert the employee's five skill ratings
+-- Step 3: Query the calculated skill gaps
+-- Step 4: Delete the simulated employee and their skill ratings
+--
+-- IMPORTANT:
+-- Execute each step separately and in order
+-- Use the same MySQL connection for Steps 1 and 2
+-- Do not execute Step 4 until the demo is complete
+
+
+
 USE workforce_skills;
 
 -- Step 1: Insert simulated employee
